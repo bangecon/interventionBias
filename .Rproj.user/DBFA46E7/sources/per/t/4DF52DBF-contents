@@ -1,0 +1,144 @@
+---
+title: "Simulated Risk Model"
+author: "James T. Bang"
+date: "September 5, 2022"
+output:
+  pdf_document: default
+  word_document: 
+    reference_docx: AbstractSEA2022.docx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(margins); library(tidyverse); library(ggplot2); library(stargazer);
+library(haven)
+data <- read_dta('selection bias larger sample 8 8 22.dta')
+data$hosp <- factor(data$hosp)
+data <- subset(data, hosp != 18)
+data$mdc <-
+  factor(
+    data$mdc,
+    labels = c(
+      'Nervous',
+      'ENT',
+      'Respiratory',
+      'Circulatory',
+      'Digestive',
+      'Musculoskeletal',
+      'Skin/Subcutaneous',
+      'Hepatobil./Pancreatic',
+      'Endocrine/Metabolic',
+      'Kidney/Urinary',
+      'Male Reproductive',
+      'Blood/Immune',
+      'Infections/Parasitic',
+      'Alcohol/Drug',
+      'Injury/Poison/Toxin',
+      'Missing'
+    )
+  )
+data$age_cats <-
+  factor(data$age_cats,
+         labels = c('Under 45', '45-54', '55-64', '65-74', '75+'))
+data$race <-
+  factor(data$race, labels = c('Unspecified', 'Asian', 'Black'))
+data$ethnicity <-
+  factor(data$ethnicity, labels = c('Not Hispanic', 'Hispanic'))
+data$gender <- factor(data$gender, labels = c('Male', 'Female'))
+data$maritals <-
+  factor(data$maritals, labels = c('Not Married', 'Married'))
+data$hosp30d <-
+  factor(data$hosp30d, labels = c('None', '30-day Prior Hosp.'))
+data$medsugpt <-
+  factor(data$medsugpt, labels = c('Medical', 'Surgical'))
+data$icustay <- factor(data$icustay, labels = c('None', 'ICU Stay'))
+data$severity <-
+  factor(data$severity, labels = c('Minor', 'Moderate', 'Major'))
+data$mortrisk <-
+  factor(data$mortrisk, labels = c('Minor', 'Moderate', 'Major'))
+data$hh <- factor(data$hh, labels = c('No HHC', 'HHC'))
+data$read30_01 <-
+  factor(data$read30_01, labels = c('Not Readmitted', 'Readmitted'))
+n = 1000
+r = 1000
+outcome <- 'read30_01'
+outcomeVars <-
+  c(
+    'hosp',
+    'age_cats',
+    'medsugpt',
+    'icustay',
+    'gender',
+    'race',
+    'ethnicity',
+    'maritals',
+    'hosp30d',
+    'mortrisk',
+    'severity',
+    'lnlos',
+    'mdc' 
+  )
+intervention <- 'hh'
+varLabels <- c(
+      read30_01 = '30-Day Readmission', 
+      medsugpt = 'Surgical Patient',
+      icustay = 'ICU Stay',
+      gender = 'Female',
+      race = 'Race',
+      ethnicity = 'Ethnicity',
+      maritals = 'Marital Status',
+      hosp30d = 'Prior 30-Day Hospitalization',
+      mortrisk = 'Mortality Risk',
+      severity = 'Severity of Illness',
+      mdc = 'Major Diagnostic Category',
+      age_cats = 'Age',
+      lnlos = 'ln(Length of Stay)',
+      hh = 'Home Health')
+Hmisc::label(data) <-
+  as.list(varLabels[match(names(data), names(varLabels))])
+outcomeVarLabels <- sapply(data, function(x)
+  attr(data, 'label'))
+set.seed(8675309)
+```
+
+# Data Generation and Estimation Equations 
+
+## Data Generation
+
+The data for observed patient outcomes of readmission, home health care (HHC) assignment, patient demographics, prior hospitalization, diagnosis, and payer type come from a single hospital in the READI study (Weiss, et al., 2019).  
+The challenge is simulating the patient's latent "risk" for the adverse outcome of readmission. We propose that this is not the same as the *ex post* *__likelihood__* of readmission. We also propose that patients with higher risk of adverse outcomes - including readmission - will be more likely to receive HHC assignments. Hence, there will be a bias in the using the observedlikelihood to measure risk, and therefore a bias in the observed effectiveness of the intervention of assigning HHC. 
+To simulate this bias, we randomly assign ten percent of the patients who received HHC assignment but were not eventually readmitted a positive readmission risk value. The remaining risk values remain the same as the observed readmission outcome.  
+
+## Estimation Equations
+
+The equations to estimate the *observed* rate of readmission and home health assignment, respectively, are:  
+$$ \begin{aligned} HHC &= \beta_{10} + \beta_{11} Age + \beta_{12} Prior +  \sum_{r=1}^R \rho_{1r} Race_r + \sum_{h=1}^H \theta_{1h} Ethnicity + \sum_{p=1}^P \pi_{1p} Paytype_p \\&+ \sum_{m=1}^M \delta_{1m} Diagnosis + \alpha_{1j} + \epsilon_{1i}, \end{aligned} $$
+$$ \begin{aligned} Risk &= \beta_{20} + \beta_{21} Age + \beta_{22} Prior +  \sum_{r=1}^R \rho_{2r} Race_r + \sum_{h=1}^H \theta_{2h} Ethnicity + \sum_{p=1}^P \pi_{2p} Paytype_p \\ &+ \sum_{m=1}^M \delta_{2m} Diagnosis + \alpha_{2j} + \epsilon_{2i}, \end{aligned}$$
+and 
+$$ \begin{aligned} Readmission &= \beta_{30} + \beta_{31} Age + \beta_{32} Prior + \beta_{33} HHC + \sum_{r=1}^R \rho_{3r} Race_r + \sum_{h=1}^H \theta_{3h} Ethnicity \\&+ \sum_{p=1}^P \pi_{3p} Paytype_p + \sum_{m=1}^M \delta_{3m} Diagnosis + \alpha_{3j} + \epsilon_{3i}, \end{aligned}$$
+where $\alpha_j$ represents the fixed effect for hospital *j*. 
+```{r, include = FALSE}
+hhcSim = interventionBias::interventionSim(data = data, outcome = outcome, intervention = intervention, outcomeVars = outcomeVars)
+```
+# Simulation Results. 
+We simulated the model 1000 times using 1000 observations randomly selected from the dataset described above in each iteration. We present summary statistics for the impact of age on *risk* of readmission and the *likelihood* of readmission in Table 1.  
+
+
+```{r summaryStats, results = 'asis'}
+m <- list(m1 = hhcSim$results[[1]], m2 = hhcSim$results[[2]], m3 = hhcSim$results[[3]])
+stargazer::stargazer(list(m$m1, m$m2, m$m3), coef = hhcSim[['coefficients']][1:3], se = hhcSim[['se']][1:3], header = FALSE, no.space = TRUE, omit = c('hosp', 'mdc'), type = 'latex')
+```
+  
+Figure 1 presents a kernel density plot of the distributions of the two outcomes.  
+
+```{r densityPlots, echo = FALSE}
+sim_results_gather <- gather(sim_results)
+colnames(sim_results_gather) <- c("Key", "Value")
+ggplot(data = sim_results_gather[1001:6000,], aes(x = Value, fill = Key)) + 
+  geom_density(alpha = 0.1) +
+  geom_vline(xintercept = 0) + 
+  theme(text=element_text(size = 12, family="serif")) + 
+  ggtitle("Figure 1: Distribution of Age Coefficient") +
+  scale_fill_discrete(breaks=c("Outcome","Risk - 10% Bias","Risk - 20% Bias","Risk - 30% Bias","Risk - 40% Bias"))
+```
+

@@ -1,0 +1,1 @@
+"0","hhcSim = interventionSim(outcome = outcome, intervention = intervention, outcomeVars = outcomeVars, data = data)"
