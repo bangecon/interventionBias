@@ -18,12 +18,12 @@ interventionSim <- function(outcome,
       r,
       interventionBias(
         outcome = outcome,
-        intervention = intervention,
         outcomeVars = outcomeVars,
         interventionVars = interventionVars,
         data = data
       )
     )
+  names(sim_results) <- c("Intervention", "Outcome", "OutcomeIntervention", "Risk")
   coefMat <-
     list(
       intervention = matrix(
@@ -115,5 +115,6 @@ interventionSim <- function(outcome,
     coefMat = coefMat,
     results = sim_results
   )
+  class(out) <- c(biasSim, class(out))
   out
 }
