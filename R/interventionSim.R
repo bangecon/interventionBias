@@ -129,6 +129,6 @@ interventionSim <- function(outcome,
     coefMat = coefMat,
     results = sim_results
   )
-  class(out) <- c(biasSim, class(out))
+  class(out) <- c('biasSim', class(out))
   out
 }
