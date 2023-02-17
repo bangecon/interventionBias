@@ -118,7 +118,12 @@ and
 $$ \begin{aligned} Readmission &= \beta_{30} + \beta_{31} Age + \beta_{32} Prior + \beta_{33} HHC + \sum_{r=1}^R \rho_{3r} Race_r + \sum_{h=1}^H \theta_{3h} Ethnicity \\&+ \sum_{p=1}^P \pi_{3p} Paytype_p + \sum_{m=1}^M \delta_{3m} Diagnosis + \alpha_{3j} + \epsilon_{3i}, \end{aligned}$$
 where $\alpha_j$ represents the fixed effect for hospital *j*. 
 ```{r, include = FALSE}
-hhcSim = interventionBias::interventionSim(data = data, outcome = outcome, intervention = intervention, outcomeVars = outcomeVars)
+hhcSim = interventionBias::interventionSim(
+  data = data,
+  outcome = outcome,
+  intervention = intervention,
+  outcomeVars = outcomeVars
+)
 ```
 # Simulation Results. 
 We simulated the model 1000 times using 1000 observations randomly selected from the dataset described above in each iteration. We present summary statistics for the impact of age on *risk* of readmission and the *likelihood* of readmission in Table 1.  

@@ -18,12 +18,14 @@ interventionSim <- function(outcome,
       r,
       interventionBias(
         outcome = outcome,
+        intervention = intervention,
         outcomeVars = outcomeVars,
         interventionVars = interventionVars,
         data = data
       )
     )
-  names(sim_results) <- c("Intervention", "Outcome", "OutcomeIntervention", "Risk")
+  names(sim_results) <-
+    c("Intervention", "Outcome", "OutcomeIntervention", "Risk")
   coefMat <-
     list(
       intervention = matrix(
@@ -81,9 +83,16 @@ interventionSim <- function(outcome,
     coef[, 2 + i] <- c(rowMeans(coefMat$risk[[i]]), NA)
   }
   coef.intervention <- rowMeans(coefMat$intervention)
-  coef <- merge(coef.intervention, coef, by = 'row.names', all = TRUE, sort = FALSE)
+  coef <-
+    merge(
+      coef.intervention,
+      coef,
+      by = 'row.names',
+      all = TRUE,
+      sort = FALSE
+    )
   rownames(coef) <- coef$Row.names
-  coef <- coef[, -which(names(coef) %in% 'Row.names')]
+  coef <- coef[,-which(names(coef) %in% 'Row.names')]
   colnames(coef)[1] <- 'Intervention'
   sd <-
     matrix(
@@ -105,9 +114,14 @@ interventionSim <- function(outcome,
   }
   sd.intervention <- matrixStats::rowSds(coefMat$intervention)
   names(sd.intervention) <- rownames(coefMat$intervention)
-  sd <- merge(sd.intervention, sd, by = 'row.names', all = TRUE, sort = FALSE)
+  sd <-
+    merge(sd.intervention,
+          sd,
+          by = 'row.names',
+          all = TRUE,
+          sort = FALSE)
   rownames(sd) <- sd$Row.names
-  sd <- sd[, -which(names(sd) %in% 'Row.names')]
+  sd <- sd[,-which(names(sd) %in% 'Row.names')]
   colnames(sd)[1] <- 'Intervention'
   out <- list(
     coefficients = coef,
