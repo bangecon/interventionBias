@@ -107,12 +107,12 @@ interventionSim <- function(outcome,
         )
       )
     )
-  sd[, 1] <- c(matrixStats::rowSds(coefMat$outcome), NA)
-  sd[, 2] <- matrixStats::rowSds(coefMat$outcomeIntervention)
+  sd[, 1] <- c(matrixStats::rowSds(coefMat$outcome)/sqrt(r), NA)
+  sd[, 2] <- matrixStats::rowSds(coefMat$outcomeIntervention)/sqrt(r)
   for (i in 1:length(bias)) {
-    sd[, 2 + i] <- c(matrixStats::rowSds(coefMat$risk[[i]]), NA)
+    sd[, 2 + i] <- c(matrixStats::rowSds(coefMat$risk[[i]])/sqrt(r), NA)
   }
-  sd.intervention <- matrixStats::rowSds(coefMat$intervention)
+  sd.intervention <- matrixStats::rowSds(coefMat$intervention)/sqrt(r)
   names(sd.intervention) <- rownames(coefMat$intervention)
   sd <-
     merge(sd.intervention,
