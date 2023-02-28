@@ -106,8 +106,22 @@ set.seed(8675309)
 ## Data Generation
 
 The data for observed patient outcomes of readmission, home health care (HHC) assignment, patient demographics, prior hospitalization, diagnosis, and payer type come from a single hospital in the READI study (Weiss, et al., 2019).  
-The challenge is simulating the patient's latent "risk" for the adverse outcome of readmission. We propose that this is not the same as the *ex post* *__likelihood__* of readmission. We also propose that patients with higher risk of adverse outcomes - including readmission - will be more likely to receive HHC assignments. Hence, there will be a bias in the using the observedlikelihood to measure risk, and therefore a bias in the observed effectiveness of the intervention of assigning HHC. 
-To simulate this bias, we randomly assign ten percent of the patients who received HHC assignment but were not eventually readmitted a positive readmission risk value. The remaining risk values remain the same as the observed readmission outcome.  
+
+Predictive models of risk attempt to assign patients into risk categories based on data known prior to discharge, and hospitals increasingly use such risk models to assign patients to post-discharge interventions like HHC. The challenge is simulating the patient's latent "risk" for the adverse outcome of readmission. We propose that this is not the same as the *ex post* *__likelihood__* of readmission. We also propose that patients with higher risk of adverse outcomes - including readmission - will be more likely to receive HHC assignments, and that the effectiveness of the clinician's decision to refer the patient to interventions like HHC at discharge masks this *ex ante* *__risk__*. Hence, there will be a bias in the using the observed likelihood to measure risk, and therefore a bias in the observed effectiveness of the intervention of assigning HHC. 
+
+To simulate this bias, suppose that "treated" HHC patients exhibit an *ex post* readmission *prevalence*, $\pi$, but that the treatment carries a proportional *effectiveness* equal to $\eta$. Then, the overall *risk* of readmission would be: 
+
+$$\rho = \frac{\pi}{1 - \eta}.$$
+
+We can express the *bias* of any *ex ante* prediction based on pre-discharge observables as the true risk ($\rho$) as a proportion of the fraction of HHC patients who did *not* eventually readmit themselves. This bias, $B$ equals:
+
+$$B = \frac{\rho}{1-\pi}.$$
+
+Substituting (1) into (2) and simplifying, we get: 
+
+$$B = \frac{\pi}{1-\pi} \frac{1}{1-\eta}$$
+
+
 
 ## Estimation Equations
 
@@ -118,6 +132,8 @@ and
 $$ \begin{aligned} Readmission &= \beta_{30} + \beta_{31} Age + \beta_{32} Prior + \beta_{33} HHC + \sum_{r=1}^R \rho_{3r} Race_r + \sum_{h=1}^H \theta_{3h} Ethnicity \\&+ \sum_{p=1}^P \pi_{3p} Paytype_p + \sum_{m=1}^M \delta_{3m} Diagnosis + \alpha_{3j} + \epsilon_{3i}, \end{aligned}$$
 where $\alpha_j$ represents the fixed effect for hospital *j*. 
 
+# Simulation Results. 
+
 ```{r, include = FALSE}
 hhcSim = interventionBias::interventionSim(
   data = data,
@@ -126,8 +142,6 @@ hhcSim = interventionBias::interventionSim(
   outcomeVars = outcomeVars
 )
 ```
-
-# Simulation Results. 
 
 We simulated the model 1000 times using 1000 observations randomly selected from the dataset described above in each iteration. We present the replicated results for the impact of length of stay on *likelihood* of readmission and the *likelihood* of readmission in Table 1.
 

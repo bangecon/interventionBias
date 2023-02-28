@@ -1,8 +1,0 @@
-"0","# sim_results_gather <- gather(sim_results)"
-"0","# colnames(sim_results_gather) <- c(""Key"", ""Value"")"
-"0","# ggplot(data = sim_results_gather[1001:5000,], aes(x = Value, fill = Key)) + "
-"0","#   geom_density(alpha = 0.1) +"
-"0","#   geom_vline(xintercept = 0) + "
-"0","#   theme(text=element_text(size = 12, family=""serif"")) + "
-"0","#   ggtitle(""Figure 1: Distribution of Age Coefficient"") +"
-"0","#   scale_fill_discrete(breaks=c(""Outcome"",""10% Bias"",""20% Bias"",""30% Bias"",""40% Bias""))"

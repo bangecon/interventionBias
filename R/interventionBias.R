@@ -5,7 +5,7 @@ interventionBias <-
            interventionVars = NULL,
            data,
            n = 1000,
-           bias = c(10, 20, 30, 40)) {
+           effect = c(10, 20, 30, 40)) {
     if (is.null(outcomeVars)) {
       outcomeVars <-
         names(data)[-which(names(data) %in% c(outcome, intervention))]
@@ -13,9 +13,15 @@ interventionBias <-
     if (is.null(interventionVars)) {
       interventionVars <- outcomeVars
     }
-    if (max(bias) > 1) {
-      bias <- bias / 100
+    if (max(effect) > 1) {
+      effect <- effect / 100
     }
+    if (is.numeric(data[[outcome]])) {
+      data[[outcome]] <- as.factor(data[[outcome]])
+    }
+    pi <-
+      min(summary(data[[outcome]])) / length(na.omit(data[[outcome]]))
+    bias <- (pi / (1 - pi)) * 1 / (1 - effect)
     fit.outcome <- NULL
     fit.intervention <- NULL
     # Randomly sample the data and "inflate" risk for HHC patients
@@ -45,11 +51,11 @@ interventionBias <-
         fit.outcomeIntervention = fit.outcomeIntervention,
         fit.risk = NULL
       )
-    for (i in 1:length(bias)) {
+    for (i in 1:length(effect)) {
       bs$risk <- factor(
         ifelse(bs[[intervention]] == levels(bs[[intervention]])[2] &
                  bs[[outcome]] == levels(bs[[outcome]])[1] &
-                 bs$adjust < bias[i], 2, bs[[outcome]]), labels = c('Not At-Risk', 'At-Risk'))
+                 bs$adjust < effect[i], 2, bs[[outcome]]), labels = c('Not At-Risk', 'At-Risk'))
       risk.frame <-
         cbind(bs['risk'], bs[, which(names(bs) %in% outcomeVars)])
       riskFormula <- formula(risk.frame)
