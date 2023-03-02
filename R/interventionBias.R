@@ -52,7 +52,7 @@ interventionBias <-
         mfx.outcomeIntervention = NULL,
         mfx.risk = NULL
       )
-    if(is.null(clusterVar)) {
+    if (is.null(clusterVar)) {
       fit$fit.outcome <-
         suppressWarnings(glm(outcomeFormula, data = bs, family = binomial))
       fit$fit.intervention <-
@@ -81,22 +81,27 @@ interventionBias <-
           suppressWarnings(glm(riskFormula, data = bs, family = binomial))
       }
     } else {
-      cluster <- formula(data[,which(names(data) %in% clusterVar)])
+      cluster <- formula(data[, which(names(data) %in% clusterVar)])
       fit$glm.outcome <-
         suppressWarnings(glm(outcomeFormula, data = bs, family = binomial))
       fit$fit.outcome <-
-        coeftest(fit$glm.outcome, vcov = vcovCL, cluster = cluster)
+        lmtest::coeftest(fit$glm.outcome, vcov = vcovCL, cluster = cluster)
       fit$glm.intervention <-
         suppressWarnings(glm(interventionFormula, data = bs, family = binomial))
       fit$fit.intervention <-
-        coeftest(fit$glm.intervention, vcov = vcovCL, cluster = cluster)
+        lmtest::coeftest(fit$glm.intervention,
+                         vcov = vcovCL,
+                         cluster = cluster)
       fit$glm.outcomeIntervention <-
         suppressWarnings(glm(
           outcomeWInterventionFormula,
           data = bs,
-          family = binomial))
+          family = binomial
+        ))
       fit$fit.outcomeIntervention <-
-        coeftest(fit$glm.outcomeIntervention, vcov = vcovCL, cluster = cluster)
+        lmtest::coeftest(fit$glm.outcomeIntervention,
+                         vcov = vcovCL,
+                         cluster = cluster)
       for (i in 1:length(effect)) {
         bs$risk <- factor(
           ifelse(
@@ -113,17 +118,18 @@ interventionBias <-
         riskFormula <- formula(risk.frame)
         fit$glm.risk[[i]] <-
           suppressWarnings(glm(riskFormula, data = bs, family = binomial))
-        fit$fit.risk[[i]] <- coeftest(fit$glm.risk[[i]], vcov = vcovCL, cluster = cluster)
+        fit$fit.risk[[i]] <-
+          lmtest::coeftest(fit$glm.risk[[i]], vcov = vcovCL, cluster = cluster)
       }
     }
-    if(margins == TRUE){
+    if (margins == TRUE) {
       if (is.null(clusterVar)) {
         mfx$mfx.outcome <-
-          marginaleffects(fit$fit.outcome, newdata = bs)
+          marginaleffects::marginaleffects(fit$fit.outcome, newdata = bs)
         mfx$mfx.intervention <-
-          marginaleffects(fit$fit.intervention, newdata = bs)
+          marginaleffects::marginaleffects(fit$fit.intervention, newdata = bs)
         mfx$mfx.outcomeIntervention <-
-          marginaleffects(fit$fit.outcomeIntervention, newdata = bs)
+          marginaleffects::marginaleffects(fit$fit.outcomeIntervention, newdata = bs)
         for (i in 1:length(effect)) {
           bs$risk <- factor(
             ifelse(
@@ -139,17 +145,27 @@ interventionBias <-
             cbind(bs['risk'], bs[, which(names(bs) %in% outcomeVars)])
           riskFormula <- formula(risk.frame)
           mfx$mfx..risk[[i]] <-
-            marginaleffects(fit$fit.risk[[1]], newdata = bs)
+            marginaleffects::marginaleffects(fit$fit.risk[[1]], newdata = bs)
         }
       } else {
         mfx$mfx.outcome <-
-          marginaleffects(fit$glm.outcome, vcov = cluster, newdata = bs)
+          marginaleffects::marginaleffects(
+            fit$glm.outcome,
+            vcov = sandwich::vcovCL(fit$glm.outcome, cluster),
+            newdata = bs
+          )
         mfx$mfx.intervention <-
-          marginaleffects(fit$glm.intervention, vcov = cluster, newdata = bs)
+          marginaleffects::marginaleffects(
+            fit$glm.intervention,
+            vcov = sandwich::vcovCL(fit$glm.outcome, cluster),
+            newdata = bs
+          )
         mfx$mfx.outcomeIntervention <-
-          marginaleffects(fit$glm.outcomeIntervention,
-                          vcov = cluster,
-                          newdata = bs)
+          marginaleffects::marginaleffects(
+            fit$glm.outcomeIntervention,
+            vcov = sandwich::vcovCL(fit$glm.outcome, cluster),
+            newdata = bs
+          )
         for (i in 1:length(effect)) {
           bs$risk <- factor(
             ifelse(
@@ -165,7 +181,11 @@ interventionBias <-
             cbind(bs['risk'], bs[, which(names(bs) %in% outcomeVars)])
           riskFormula <- formula(risk.frame)
           mfx$mfx.risk[[i]] <-
-            marginaleffects(fit$glm.risk[[1]], vcov = cluster, newdata = bs)
+            marginaleffects::marginaleffects(
+              fit$glm.risk[[1]],
+              vcov = sandwich::vcovCL(fit$glm.outcome, cluster),
+              newdata = bs
+            )
         }
       }
     }

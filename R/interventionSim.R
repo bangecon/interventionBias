@@ -16,12 +16,12 @@ interventionSim <- function(outcome,
     interventionVars <- outcomeVars
   }
   if (parallel == TRUE) {
-    cl <- makeCluster(detectCores()-1)
+    cl <- parallel::makeCluster(detectCores()-1)
     # clusterEvalQ(cl,library(MASS))
-    clusterExport(cl,c("data"))
-    clusterSetRNGStream(cl)
+    parallel::clusterExport(cl,c("data"))
+    parallel::clusterSetRNGStream(cl)
     #... then parallel replicate...
-    sim_results <- parSapply(cl, 1:1000,
+    sim_results <- parallel::parSapply(cl, 1:1000,
       interventionBias(
         outcome = outcome,
         intervention = intervention,
@@ -30,7 +30,7 @@ interventionSim <- function(outcome,
         data = data
       )
     )
-    stopCluster(cl)
+    parallel::stopCluster(cl)
   } else {
     sim_results <-
       replicate(
