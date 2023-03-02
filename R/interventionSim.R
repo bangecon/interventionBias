@@ -16,7 +16,7 @@ interventionSim <- function(outcome,
     interventionVars <- outcomeVars
   }
   if (parallel == TRUE) {
-    cl <- parallel::makeCluster(detectCores()-1)
+    cl <- parallel::makeCluster(parallel::detectCores()-1)
     # clusterEvalQ(cl,library(MASS))
     parallel::clusterExport(cl,c("data"))
     parallel::clusterSetRNGStream(cl)
