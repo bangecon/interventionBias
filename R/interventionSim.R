@@ -5,7 +5,9 @@ interventionSim <- function(outcome,
                             data,
                             n = 1000,
                             r = 1000,
-                            effect = c(10, 20, 30, 40)) {
+                            effect = c(10, 20, 30, 40),
+                            margins = TRUE,
+                            parallel = TRUE) {
   if (is.null(outcomeVars)) {
     outcomeVars <-
       names(data)[-which(names(data) %in% c(outcome, intervention))]
@@ -13,9 +15,13 @@ interventionSim <- function(outcome,
   if (is.null(interventionVars)) {
     interventionVars <- outcomeVars
   }
-  sim_results <-
-    replicate(
-      r,
+  if (parallel == TRUE) {
+    cl <- makeCluster(detectCores()-1)
+    # clusterEvalQ(cl,library(MASS))
+    clusterExport(cl,c("data"))
+    clusterSetRNGStream(cl)
+    #... then parallel replicate...
+    sim_results <- parSapply(cl, 1:1000,
       interventionBias(
         outcome = outcome,
         intervention = intervention,
@@ -24,6 +30,20 @@ interventionSim <- function(outcome,
         data = data
       )
     )
+    stopCluster(cl)
+  } else {
+    sim_results <-
+      replicate(
+        r,
+        interventionBias(
+          outcome = outcome,
+          intervention = intervention,
+          outcomeVars = outcomeVars,
+          interventionVars = interventionVars,
+          data = data
+        )
+      )
+  }
   names(sim_results) <-
     c("Intervention", "Outcome", "OutcomeIntervention", "Risk")
   coefMat <-

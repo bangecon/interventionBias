@@ -10,11 +10,12 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(margins); library(tidyverse); library(ggplot2); library(stargazer);
-library(haven); library(interventionBias)
+library(marginaleffects); library(tidyverse); library(ggplot2)
+library(stargazer); library(haven); library(interventionBias); 
+library(sandwich); library(lmtest); library(parallel)
 data <- read_dta('selection bias larger sample 8 8 22.dta')
-data$hosp <- factor(data$hosp)
 data$hosp <- ifelse(data$hosp == 18, 46, data$hosp)
+data$hosp <- factor(data$hosp)
 data$mdc <-
   factor(
     data$mdc,
