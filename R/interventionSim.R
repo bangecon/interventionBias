@@ -25,9 +25,8 @@ interventionSim <- function(outcome,
         'outcomeVars',
         'intervention',
         'interventionVars',
-        "data",
-        'effect',
-        'margins'
+        'data',
+        'effect'
       )
     )
     #... then parallel replicate...

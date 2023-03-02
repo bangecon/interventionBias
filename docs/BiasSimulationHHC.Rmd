@@ -93,6 +93,8 @@ varLabels <- c(
       age_cats = 'Age',
       lnlos = 'ln(Length of Stay)',
       hh = 'Home Health')
+interventionVars <- outcomeVars
+effect = c(10, 20, 30, 40, 50, 60)
 Hmisc::label(data) <-
   as.list(varLabels[match(names(data), names(varLabels))])
 outcomeVarLabels <- sapply(data, function(x)
