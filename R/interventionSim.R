@@ -16,12 +16,14 @@ interventionSim <- function(outcome,
     interventionVars <- outcomeVars
   }
   if (parallel == TRUE) {
-    cl <- parallel::makeCluster(parallel::detectCores()-1)
+    cl <- parallel::makeCluster(parallel::detectCores() - 1)
     # clusterEvalQ(cl,library(MASS))
-    parallel::clusterExport(cl,c("data"))
+    parallel::clusterExport(cl, c("data"))
     parallel::clusterSetRNGStream(cl)
     #... then parallel replicate...
-    sim_results <- parallel::parSapply(cl, 1:1000,
+    sim_results <- parallel::parSapply(
+      cl,
+      1:1000,
       interventionBias::interventionBias(
         outcome = outcome,
         intervention = intervention,
@@ -100,19 +102,21 @@ interventionSim <- function(outcome,
   }
   for (i in 1:r) {
     coefMat$intervention[, i] <- sim_results[[1, i]]$coefficients
-    seMat$intervention[, i] <- summary(sim_results[[1, i]])$coefficients[,2]
+    seMat$intervention[, i] <-
+      summary(sim_results[[1, i]])$coefficients[, 2]
     coefMat$outcome[, i] <- sim_results[[2, i]]$coefficients
-    seMat$outcome[, i] <- summary(sim_results[[2, i]])$coefficients[,2]
+    seMat$outcome[, i] <-
+      summary(sim_results[[2, i]])$coefficients[, 2]
     coefMat$outcomeIntervention[, i] <-
       sim_results[[3, i]]$coefficients
     seMat$outcomeIntervention[, i] <-
-      summary(sim_results[[3, i]])$coefficients[,2]
+      summary(sim_results[[3, i]])$coefficients[, 2]
     for (j in 1:length(effect)) {
       coefMat$risk[[j]][, i] <-
         sim_results[[4, i]][[j]]$coefficients
       seMat$risk[[j]][, i] <-
         summary(sim_results[[4, i]][[j]])$coefficients[2]
-      }
+    }
   }
   ### Something to average the coefficients across rows of each completed table.
   coef <-
@@ -143,7 +147,7 @@ interventionSim <- function(outcome,
       sort = FALSE
     )
   rownames(coef) <- coef$Row.names
-  coef <- coef[,-which(names(coef) %in% 'Row.names')]
+  coef <- coef[, -which(names(coef) %in% 'Row.names')]
   colnames(coef)[1] <- 'Intervention'
   se <-
     matrix(
@@ -172,7 +176,7 @@ interventionSim <- function(outcome,
           all = TRUE,
           sort = FALSE)
   rownames(se) <- se$Row.names
-  se <- se[,-which(names(se) %in% 'Row.names')]
+  se <- se[, -which(names(se) %in% 'Row.names')]
   colnames(se)[1] <- 'Intervention'
   out <- list(
     coefficients = coef,
