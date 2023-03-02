@@ -22,7 +22,7 @@ interventionSim <- function(outcome,
     parallel::clusterSetRNGStream(cl)
     #... then parallel replicate...
     sim_results <- parallel::parSapply(cl, 1:1000,
-      interventionBias(
+      interventionBias::interventionBias(
         outcome = outcome,
         intervention = intervention,
         outcomeVars = outcomeVars,
