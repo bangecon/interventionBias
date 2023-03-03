@@ -17,7 +17,7 @@ interventionSim <- function(outcome,
   }
   if (parallel == TRUE) {
     cl <- parallel::makeCluster(parallel::detectCores() - 1)
-    # clusterEvalQ(cl,library(MASS))
+    clusterEvalQ(cl, library(interventionBias))
     parallel::clusterExport(
       cl,
       list(

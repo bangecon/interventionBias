@@ -140,7 +140,9 @@ hhcSim = interventionBias::interventionSim(
   data = data,
   outcome = outcome,
   intervention = intervention,
-  outcomeVars = outcomeVars
+  outcomeVars = outcomeVars, 
+  r = r, 
+  n = n
 )
 ```
 
