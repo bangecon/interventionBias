@@ -101,6 +101,44 @@ interventionSim <- function(outcome,
       ),
       risk = list()
     )
+  mfxMat <-
+    list(
+      intervention = matrix(
+        nrow = length(sim_results[[5]]$coefficients),
+        ncol = r,
+        dimnames = list(names(sim_results[[5]]$coefficients), c(1:r))
+      ),
+      outcome = matrix(
+        nrow = length(sim_results[[6]]$coefficients),
+        ncol = r,
+        dimnames = list(names(sim_results[[6]]$coefficients), c(1:r))
+      ),
+      outcomeIntervention = matrix(
+        nrow = length(sim_results[[7]]$coefficients),
+        ncol = r,
+        dimnames = list(names(sim_results[[7]]$coefficients), c(1:r))
+      ),
+      risk = list()
+    )
+  mfxseMat <-
+    list(
+      intervention = matrix(
+        nrow = length(sim_results[[5]]$coefficients),
+        ncol = r,
+        dimnames = list(names(sim_results[[5]]$coefficients), c(1:r))
+      ),
+      outcome = matrix(
+        nrow = length(sim_results[[6]]$coefficients),
+        ncol = r,
+        dimnames = list(names(sim_results[[6]]$coefficients), c(1:r))
+      ),
+      outcomeIntervention = matrix(
+        nrow = length(sim_results[[7]]$coefficients),
+        ncol = r,
+        dimnames = list(names(sim_results[[7]]$coefficients), c(1:r))
+      ),
+      risk = list()
+    )
   for (j in 1:length(effect)) {
     coefMat$risk[[j]] <-
       matrix(
@@ -109,6 +147,18 @@ interventionSim <- function(outcome,
         dimnames = list(names(sim_results[[4, 1]][[j]]$coefficients), c(1:r))
       )
     seMat$risk[[j]] <-
+      matrix(
+        nrow = length(sim_results[[4, 1]][[j]]$coefficients),
+        ncol = r,
+        dimnames = list(names(sim_results[[4, 1]][[j]]$coefficients), c(1:r))
+      )
+    mfxMat$risk[[j]] <-
+      matrix(
+        nrow = length(sim_results[[4, 1]][[j]]$coefficients),
+        ncol = r,
+        dimnames = list(names(sim_results[[4, 1]][[j]]$coefficients), c(1:r))
+      )
+    mfxseMat$risk[[j]] <-
       matrix(
         nrow = length(sim_results[[4, 1]][[j]]$coefficients),
         ncol = r,
@@ -126,11 +176,25 @@ interventionSim <- function(outcome,
       sim_results[[3, i]]$coefficients
     seMat$outcomeIntervention[, i] <-
       summary(sim_results[[3, i]])$coefficients[, 2]
+    mfxMat$intervention[, i] <- sim_results[[5, i]]$coefficients
+    mfxseMat$intervention[, i] <-
+      summary(sim_results[[5, i]])$coefficients[, 2]
+    mfxMat$outcome[, i] <- sim_results[[6, i]]$coefficients
+    mfxseMat$outcome[, i] <-
+      summary(sim_results[[6, i]])$coefficients[, 2]
+    mfxMat$outcomeIntervention[, i] <-
+      sim_results[[7, i]]$coefficients
+    mfxseMat$outcomeIntervention[, i] <-
+      summary(sim_results[[7, i]])$coefficients[, 2]
     for (j in 1:length(effect)) {
       coefMat$risk[[j]][, i] <-
         sim_results[[4, i]][[j]]$coefficients
       seMat$risk[[j]][, i] <-
         summary(sim_results[[4, i]][[j]])$coefficients[2]
+      mfxMat$risk[[j]][, i] <-
+        sim_results[[8, i]][[j]]$coefficients
+      mfxseMat$risk[[j]][, i] <-
+        summary(sim_results[[8, i]][[j]])$coefficients[2]
     }
   }
   ### Something to average the coefficients across rows of each completed table.
