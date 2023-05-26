@@ -1,12 +1,13 @@
 interventionSim <- function(outcome,
                             intervention,
-                            outcomeVars = NULL,
+                            outcomeVars,
                             interventionVars = NULL,
+                            clusterVar = NULL,
                             data,
                             n = 1000,
                             r = 1000,
                             effect = c(10, 20, 30, 40),
-                            margins = TRUE,
+                            margins = FALSE,
                             parallel = TRUE) {
   if (is.null(outcomeVars)) {
     outcomeVars <-
@@ -17,34 +18,44 @@ interventionSim <- function(outcome,
   }
   if (parallel == TRUE) {
     cl <- parallel::makeCluster(parallel::detectCores() - 1)
-    clusterEvalQ(cl, library(interventionBias))
+    parallel::clusterEvalQ(cl, library(interventionBias))
     parallel::clusterExport(
       cl,
       list(
         'outcome',
-        'outcomeVars',
         'intervention',
+        'outcomeVars',
         'interventionVars',
+        'clusterVar',
         'data',
-        'effect'
-      )
+        'n',
+        'effect',
+        'margins'
+      ),
+      envir = environment()
     )
-    #... then parallel replicate...
-    sim_results <- parallel::parSapply(
-      cl,
-      1:r,
-      function(...) {
-        interventionBias::interventionBias(
-          outcome = outcome,
-          intervention = intervention,
-          outcomeVars = outcomeVars,
-          interventionVars = interventionVars,
-          data = data,
-          effect = effect,
-          margins = margins
-        )
-      }
-    )
+    sim_results <- parallel::parSapply(cl,
+                                       1:r,
+                                       function(outcome,
+                                                intervention,
+                                                outcomeVars,
+                                                interventionVars,
+                                                clusterVar,
+                                                data,
+                                                n,
+                                                effect) {
+                                         interventionBias(
+                                           outcome = outcome,
+                                           intervention = intervention,
+                                           outcomeVars = outcomeVars,
+                                           interventionVars = interventionVars,
+                                           clusterVar = clusterVar,
+                                           data = data,
+                                           n = n,
+                                           effect = effect
+                                         )
+                                       })
+    # clusterVar and effect possibly not clusterExport-ing correctly?
     parallel::stopCluster(cl)
   } else {
     sim_results <-
@@ -55,14 +66,12 @@ interventionSim <- function(outcome,
           intervention = intervention,
           outcomeVars = outcomeVars,
           interventionVars = interventionVars,
+          clusterVar = clusterVar,
           data = data,
-          effect = effect,
-          margins = margins
+          effect = effect
         )
       )
   }
-  names(sim_results) <-
-    c("Intervention", "Outcome", "OutcomeIntervention", "Risk")
   coefMat <-
     list(
       intervention = matrix(
@@ -101,100 +110,30 @@ interventionSim <- function(outcome,
       ),
       risk = list()
     )
-  mfxMat <-
-    list(
-      intervention = matrix(
-        nrow = length(sim_results[[5]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[5]]$coefficients), c(1:r))
-      ),
-      outcome = matrix(
-        nrow = length(sim_results[[6]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[6]]$coefficients), c(1:r))
-      ),
-      outcomeIntervention = matrix(
-        nrow = length(sim_results[[7]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[7]]$coefficients), c(1:r))
-      ),
-      risk = list()
+  for(j in 1:length(effect)) {
+    coefMat$risk[[j]] <- matrix(
+      nrow = length(sim_results[[2]]$coefficients),
+      ncol = r,
+      dimnames = list(names(sim_results[[2]]$coefficients), c(1:r))
     )
-  mfxseMat <-
-    list(
-      intervention = matrix(
-        nrow = length(sim_results[[5]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[5]]$coefficients), c(1:r))
-      ),
-      outcome = matrix(
-        nrow = length(sim_results[[6]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[6]]$coefficients), c(1:r))
-      ),
-      outcomeIntervention = matrix(
-        nrow = length(sim_results[[7]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[7]]$coefficients), c(1:r))
-      ),
-      risk = list()
+    seMat$risk[[j]] <- matrix(
+      nrow = length(sim_results[[2]]$coefficients),
+      ncol = r,
+      dimnames = list(names(sim_results[[2]]$coefficients), c(1:r))
     )
-  for (j in 1:length(effect)) {
-    coefMat$risk[[j]] <-
-      matrix(
-        nrow = length(sim_results[[4, 1]][[j]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[4, 1]][[j]]$coefficients), c(1:r))
-      )
-    seMat$risk[[j]] <-
-      matrix(
-        nrow = length(sim_results[[4, 1]][[j]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[4, 1]][[j]]$coefficients), c(1:r))
-      )
-    mfxMat$risk[[j]] <-
-      matrix(
-        nrow = length(sim_results[[4, 1]][[j]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[4, 1]][[j]]$coefficients), c(1:r))
-      )
-    mfxseMat$risk[[j]] <-
-      matrix(
-        nrow = length(sim_results[[4, 1]][[j]]$coefficients),
-        ncol = r,
-        dimnames = list(names(sim_results[[4, 1]][[j]]$coefficients), c(1:r))
-      )
   }
   for (i in 1:r) {
     coefMat$intervention[, i] <- sim_results[[1, i]]$coefficients
-    seMat$intervention[, i] <-
-      summary(sim_results[[1, i]])$coefficients[, 2]
     coefMat$outcome[, i] <- sim_results[[2, i]]$coefficients
-    seMat$outcome[, i] <-
-      summary(sim_results[[2, i]])$coefficients[, 2]
     coefMat$outcomeIntervention[, i] <-
       sim_results[[3, i]]$coefficients
-    seMat$outcomeIntervention[, i] <-
-      summary(sim_results[[3, i]])$coefficients[, 2]
-    mfxMat$intervention[, i] <- sim_results[[5, i]]$coefficients
-    mfxseMat$intervention[, i] <-
-      summary(sim_results[[5, i]])$coefficients[, 2]
-    mfxMat$outcome[, i] <- sim_results[[6, i]]$coefficients
-    mfxseMat$outcome[, i] <-
-      summary(sim_results[[6, i]])$coefficients[, 2]
-    mfxMat$outcomeIntervention[, i] <-
-      sim_results[[7, i]]$coefficients
-    mfxseMat$outcomeIntervention[, i] <-
-      summary(sim_results[[7, i]])$coefficients[, 2]
+    seMat$intervention[, i] <- sim_results[5, ][[i]]
+    seMat$outcome[, i] <- sim_results[6, ][[i]]
+    seMat$outcomeIntervention[, i] <- sim_results[7, ][[i]]
     for (j in 1:length(effect)) {
       coefMat$risk[[j]][, i] <-
         sim_results[[4, i]][[j]]$coefficients
-      seMat$risk[[j]][, i] <-
-        summary(sim_results[[4, i]][[j]])$coefficients[2]
-      mfxMat$risk[[j]][, i] <-
-        sim_results[[8, i]][[j]]$coefficients
-      mfxseMat$risk[[j]][, i] <-
-        summary(sim_results[[8, i]][[j]])$coefficients[2]
+      seMat$risk[[j]][, i] <- sim_results[8,][[i]][[j]]
     }
   }
   ### Something to average the coefficients across rows of each completed table.
@@ -226,7 +165,7 @@ interventionSim <- function(outcome,
       sort = FALSE
     )
   rownames(coef) <- coef$Row.names
-  coef <- coef[, -which(names(coef) %in% 'Row.names')]
+  coef <- coef[,-which(names(coef) %in% 'Row.names')]
   colnames(coef)[1] <- 'Intervention'
   se <-
     matrix(
@@ -255,11 +194,81 @@ interventionSim <- function(outcome,
           all = TRUE,
           sort = FALSE)
   rownames(se) <- se$Row.names
-  se <- se[, -which(names(se) %in% 'Row.names')]
+  se <- se[,-which(names(se) %in% 'Row.names')]
   colnames(se)[1] <- 'Intervention'
+  mfx <-
+    matrix(
+      nrow = nrow(mfxMat$outcomeIntervention),
+      ncol = 2 + length(effect),
+      dimnames = list(
+        make.names(rownames(mfxMat$outcomeIntervention)),
+        c(
+          'Outcome',
+          'Outcome.With.Intervention',
+          paste0('EffectSize', effect)
+        )
+      )
+    )
+  mfx[, 1] <- c(rowMeans(mfxMat$outcome), NA)
+  mfx[, 2] <- rowMeans(mfxMat$outcomeIntervention)
+  for (i in 1:length(effect)) {
+    mfx[, 2 + i] <- c(rowMeans(mfxMat$risk[[i]]), NA)
+  }
+  mfx.intervention <- matrix(rowMeans(mfxMat$intervention),
+                             dimnames = list(make.names(rownames(
+                               mfxMat$intervention
+                             )), NULL))
+  # mfx <-
+  #   merge(mfx.intervention,
+  #         mfx,
+  #         by = 'row.names',
+  #         all = TRUE,
+  #         sort = FALSE)
+  # rownames(mfx) <-
+  #   rownames(coef)[-which(rownames(coef) %in% "(Intercept)")]
+  # mfx <- mfx[,-which(names(mfx) %in% 'Row.names')]
+  # colnames(mfx)[1] <- 'Intervention'
+  # mfxse <-
+  #   matrix(
+  #     nrow = nrow(mfxMat$outcomeIntervention),
+  #     ncol = 2 + length(effect),
+  #     dimnames = list(
+  #       rownames(mfxMat$outcomeIntervention),
+  #       c(
+  #         'Outcome',
+  #         'Outcome.With.Intervention',
+  #         paste0('EffectSize', effect)
+  #       )
+  #     )
+  #   )
+  # mfxse[, 1] <- c(rowMeans(mfxseMat$outcome), NA)
+  # mfxse[, 2] <- rowMeans(mfxseMat$outcomeIntervention)
+  # for (i in 1:length(effect)) {
+  #   mfxse[, 2 + i] <- c(rowMeans(mfxseMat$risk[[i]]), NA)
+  # }
+  # mfxse.intervention <- matrix(rowMeans(mfxseMat$intervention),
+  #                              dimnames = list(make.names(rownames(
+  #                                mfxseMat$intervention
+  #                              )), NULL))
+  # names(mfxse.intervention) <- rownames(mfxMat$intervention)
+  # mfxse <-
+  #   merge(
+  #     mfxse.intervention,
+  #     mfxse,
+  #     by = 'row.names',
+  #     all = TRUE,
+  #     sort = FALSE
+  #   )
+  # rownames(mfxse) <-
+  #   rownames(coef)[-which(rownames(coef) %in% "(Intercept)")]
+  # mfxse <- mfxse[,-which(names(mfxse) %in% 'Row.names')]
+  # colnames(mfxse)[1] <- 'Intervention'
+  #
   out <- list(
     coefficients = coef,
     se = se,
+    # margins = mfx,
+    # marginsSE = mfxse,
     coefMat = coefMat,
     results = sim_results
   )
